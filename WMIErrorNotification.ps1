@@ -1,7 +1,7 @@
 ﻿<#
-ToDo
-Write a wait and check for high CPU usage prior to notification
-Probably need to use wmi for that info
+
+Wrote this to find out what process was bugging out my WMI process and causing it to use 10% CPU constantly
+Set it to be triggered on WMI error 5858
 #>
 
 $app = '{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}\WindowsPowerShell\v1.0\powershell.exe'
