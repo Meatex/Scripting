@@ -1,8 +1,10 @@
 
 
-$SrchStr = "start.bat"
+$ioc = "MSASCuiL.exe"
 
-$SrchStr = "*"+$SrchStr
+$SrchStr = "*"+$ioc+"*"
+
+
 
 $RunKeys=@("HKLM:\Software\Microsoft\Windows\CurrentVersion\Run\", 
 "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunOnce\",
@@ -28,5 +30,16 @@ foreach($k in $RunKeys){
 
 Get-ScheduledTask | Where-Object {$_.Actions.execute -like "$SrchStr" }| Select-Object Taskname, {$_.Actions.Execute}
 
+if ($ioc.Length -le 4){
+    Write-Host "Given IO"
+}
 #check new services
 #file check
+
+<#
+testing stuff
+
+$k="HKLM:\Software\Microsoft\Windows\CurrentVersion\Run\"
+$test = Get-ItemPropertyValue -path $k -Name ((Get-Item -Path $k).getvaluenames())
+if ($test[0..-1] -like $SrchStr){echo "hit`n"; echo $test}
+#>
