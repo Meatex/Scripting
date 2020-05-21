@@ -3,12 +3,11 @@ $ErrorActionPreference= 'silentlycontinue'
 #set paths and PIDS
 $img = "E:\Images\Memory\SC-WKS01-Snapshot1.vmsn"
 $out = "U:\Memory"
-#[string]$pids = "3976"
 
 #set things up
 Write-Host "Getting suggested profile for specified image... Please wait...`n"
 $profile = volatility -f $img imageinfo | select-string suggested 
-$profile = $profile.ToString().Split(' ')[-1]
+$profile = $profile.ToString().Split(' ')[-1] # edit this index if there is wierd output
 $vol = "volatility -f " + $img + " --profile=" + $profile + " "
 [System.Collections.ArrayList]$cmds = @("pslist", "pstree", "psscan", "psxview", "netscan", "malfind", "envars")
 [System.Collections.ArrayList]$pidscmds = @("dlllist", "getsids")
@@ -33,8 +32,6 @@ else
     Invoke-Expression "$vol procdump -p $pids -D U:\FilesOfInterest\"
     Get-ChildItem -Path "U:\FilesOfInterest\" | Get-FileHash -Algorithm MD5 | Out-File procdumpsMD5.txt
 }
-
-#Haven't tested this but "should" work
 
 $yara = Read-Host -Prompt "`nWhat would you like to yarascan for?: "
 if ($yara -eq $null)
