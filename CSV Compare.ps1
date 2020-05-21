@@ -36,9 +36,14 @@ $Target = import-csv -Path $CompTarget | sort
 
 #Get differences from CompTarget CSV only
 $CompArray = Compare-Object $Base $Target -Property $CompField | where-object {$_.sideindicator -eq "=>"}
+Write-Host "Found" $CompArray.count "differences in $CompTarget"
 
 # match with regex against CompTarget
+#to do: maybe implement threading to make this go faster
+$i = 0
 foreach ($h in $CompArray.MD5){
+    $i += 1
+    Write-Progress -activity "Parsing results..." -PercentComplete ($i/$CompArray.count*100) 
     $results += $Target | Where-Object {$h -match $_.md5}
 }
 $Results
