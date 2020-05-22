@@ -31,36 +31,57 @@ function Compare-CSV
 	
 $Results = @()
 $CompArray = @()
-$Base = import-csv -Path $Baseline | sort 
+[hashtable]$Base = @{}
+Import-Csv $Baseline -Delimiter ',' | ForEach-Object {$base[$_.$compfield] = $true}
 $Target = import-csv -Path $CompTarget | sort
+ 
+$results += $vm32 | where {-not $my_hash_table.ContainsKey($_.$CompField) }
 
-#Get differences from CompTarget CSV only
+$Results
+
+
+<#
+shit slow method but keeping for idunno reasons
+
+Get differences from CompTarget CSV only
 $CompArray = Compare-Object $Base $Target -Property $CompField | where-object {$_.sideindicator -eq "=>"}
 Write-Host "Found" $CompArray.count "differences in $CompTarget"
-
 # match with regex against CompTarget
-#to do: maybe implement threading to make this go faster
 $i = 0
-foreach ($h in $CompArray.MD5){
+ForEach ($h in $CompArray.MD5){
     $i += 1
     Write-Progress -activity "Parsing results..." -PercentComplete ($i/$CompArray.count*100) 
     $results += $Target | Where-Object {$h -match $_.md5}
 }
 $Results
 
-# Slower methods for searching
+
+# TotalSeconds      : 261.0195775
+#>
+
+# other methods
 <#
+
+$vm32 = import-csv .\vm32.csv | sort
+$base32 = import-csv .\base32.csv | sort
+
 foreach ($hash in $vm32){
     if ($base32.md5 -notmatch $hash.md5){
         if ($hash.filenames -like "*.exe") {echo $hash.md5 $hash.filenames}
     }
 }
 
+
+TotalSeconds      : 197.8754268
+
 #>
 <#
 
 $vm32 | Where-Object {$_.md5 -notin $base32.md5} | Where-Object {$_.filenames -like "*.exe"}
 
-#>
-}
 
+TotalSeconds      : 161.4982009
+
+#>
+
+}
