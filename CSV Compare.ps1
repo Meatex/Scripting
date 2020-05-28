@@ -32,10 +32,10 @@ function Compare-CSV
 $Results = @()
 $CompArray = @()
 [hashtable]$Base = @{}
-Import-Csv $Baseline -Delimiter ',' | ForEach-Object {$base[$_.$compfield] = $true}
+Import-Csv $Baseline -Delimiter ',' | ForEach-Object {$base[$_.$compfield]}
 $Target = import-csv -Path $CompTarget | sort
  
-$results += $vm32 | where {-not $my_hash_table.ContainsKey($_.$CompField) }
+$results += $target | where {-not $base.ContainsKey($_.$CompField) }
 
 $Results
 
