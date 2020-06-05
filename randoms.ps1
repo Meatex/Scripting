@@ -5,5 +5,8 @@ Get-ChildItem -path C:\ -Recurse -ErrorAction SilentlyContinue -Include $files
 
 #creates wireshark filter with frame contains and uses list of data
 $temp = get-content .\apturls.txt
-$filter = $temp | foreach {echo "frame contains"$_ "and"} 
+$filter = $temp | foreach {echo "frame matches"$_ "or"} 
 $filter=[system.string]::join(" ",$filter)
+
+# better version of above
+gc apturls.txt | % {"frame matches `"$_`" || "} | out-file -NoNewline -filepath "frame.txt"
