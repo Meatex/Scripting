@@ -21,13 +21,14 @@ $RunKeys=@("HKLM:\Software\Microsoft\Windows\CurrentVersion\Run\",
 "HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\run\")
 [System.Array]$temp = Get-Content -path 'C:\Users\DCI Student\Desktop\Exercise 4.1-05 - Create a PowerShell Script to Collect Data from Multiple Systems\reg.txt'
 [System.Array]$RegEntries = $temp | foreach {$_.split('"')[-2]}
+[System.Array]$IOCIPs = Get-Content -path 'C:\Users\DCI Student\Desktop\Exercise 4.1-05 - Create a PowerShell Script to Collect Data from Multiple Systems\ips.txt' 
 
 #IOC Hunter jobs
 $filesjob = Invoke-Command -ComputerName $comps -Credential $creds -ScriptBlock 
 { 
     foreach ($f in $using:files) 
     {
-        Get-ChildItem -Recurse -Path C:\ -ErrorAction SilentlyContinue | where-object {$_.FullName -like "*$f"} 
+        Get-ChildItem -Recurse -Path C:\ -ErrorAction SilentlyContinue -force | where-object {$_.FullName -like "*$f"} 
     }
 } -asjob -JobName "Filesjob"
 
@@ -37,10 +38,27 @@ $regjob = Invoke-Command -ComputerName $comps -Credential $creds -ScriptBlock
     { 
         if ((get-item -erroraction SilentlyContinue -path $r).property | where {$_ -in $using:RegEntries} ){get-item -Path $r}  
     }
+} -AsJob -JobName "RegJob"
+$ConnsJob = Invoke-Command -ComputerName $comps -Credential $creds -ScriptBlock 
+{ 
+    Get-NetTCPConnection | where-object {$_.RemoteAddress -in $using:IOCIPs} 
+} -AsJob -JobName "ConnsJob"
+
+# get data when notified Job has completed and clean up
+$joblist = get-job | where {$_.Name -match "FilesJob" -or "RegJob" -or "Connsjob"}
+foreach ($job in $joblist)
+{ 
+    Register-ObjectEvent $job StateChanged -Action {
+    Write-Host ("`nJob #{0} ({1}) complete." -f $sender.Id, $sender.Name) -fore White -back DarkRed
+    $eventSubscriber | Stop-Job
+    $eventSubscriber | Unregister-Event
+    $eventSubscriber.action | Remove-Job -Force
+    
+    }
 }
+#still have to manually receive-job to get output
 
-
-Get-ScheduledTask | Where-Object {$_.Actions.execute -like "$SrchStr" }| Select-Object Taskname, {$_.Actions.Execute}
+#Get-ScheduledTask | Where-Object {$_.Actions.execute -like "$SrchStr" }| Select-Object Taskname, {$_.Actions.Execute}
 
 #check new services
 
