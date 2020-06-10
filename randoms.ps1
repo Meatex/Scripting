@@ -10,3 +10,13 @@ $filter=[system.string]::join(" ",$filter)
 
 # better version of above
 gc apturls.txt | % {"frame matches `"$_`" || "} | out-file -NoNewline -filepath "frame.txt"
+
+#alternate data stream stuff
+Get-ChildItem -Path .\IdentifyDataExfil_ADS -Recurse | ForEach-Object { Get-Item $_.FullName -Stream *} |
+  Where-Object Stream -ne ':$Data' |select filename,stream | 
+  ForEach-Object {get-content -Raw $_.filename -Stream $_.stream |Set-Content -Path (($_.filename).tostring()).split('\')[-1]} 
+Get-ChildItem -Path .\IdentifyDataExfil_ADS -Recurse |
+  ForEach-Object { Get-Item $_.FullName -Stream *} |
+  select filename,stream,@{label="DATA";expression={get-content -raw $_.filename -Stream $_.stream}} |
+  Where-Object { $_.filename -like "*.txt" -and (($_.DATA).substring(0,4) -eq "Rar!" -or ($_.DATA).substring(0,2) -ceq "PK")} 
+
