@@ -96,7 +96,7 @@ Get-ScheduledTask | Select-Object pscomputername,Taskname,{$_.Actions.Execute} |
 
 #files and hashes
 Invoke-Command -ComputerName $comps -Credential $creds -ScriptBlock {
-    $dir = (cmd /c robocopy C:\ null *.* /l /s /njh /njs /ns /fp /lev:2).trim() | select-string "New File" | where {-not [string]::IsNullOrWhiteSpace($_)} |foreach{$_ -replace "`t","" -replace 'New File  ',''} 
+    $dir = (cmd /c robocopy C:\ null *.* /l /s /njh /njs /ns /fp /lev:8).trim() | select-string "New File" | where {-not [string]::IsNullOrWhiteSpace($_)} |foreach{$_ -replace "`t","" -replace 'New File  ',''} 
     [hashtable]$hashes =@{}
     if ($using:APTs[2].Hashes -ne $null){
         $using:APTs[2].Hashes | foreach{$hashes[$_] = "MD5"}
