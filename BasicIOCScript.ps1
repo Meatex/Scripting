@@ -34,6 +34,12 @@ $Users = Invoke-Command -ComputerName $comps -Credential $creds -Authentication 
     Get-LocalUser | select-Object name,enabled,pscomputername,@{label="GroupMembership";expression={net.exe user $_.name | Select-String "Local Group Memberships" }},@{label="LastLogon";expression={net.exe user $_.name | Select-String "Last Logon"}}
 } | select-Object * -ExcludeProperty Runspaceid
 
+echo $DNS
+echo $IPs
+echo $reg
+echo $skeddy
+echo $procs
+echo $users
 <#
 $dir = (cmd /c robocopy C:\ null *.* /l /s /njh /njs /ns /fp /lev:12).trim() | select-string "New File" | where {-not [string]::IsNullOrWhiteSpace($_)} |foreach{$_ -replace "`t","" -replace 'New File  ',''} 
 #put hashes in here
