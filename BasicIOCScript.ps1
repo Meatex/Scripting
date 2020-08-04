@@ -27,18 +27,22 @@ $skeddy = Invoke-Command -ComputerName $comps -Credential $creds -Authentication
 
 $procs = Invoke-Command -ComputerName $comps -Credential $creds -Authentication Negotiate -ScriptBlock {
     get-wmiobject win32_process | select-Object Name,ProcessId,ParentProcessId,CommandLine
-}
+} | select-Object * -ExcludeProperty Runspaceid
 
 $Users = Invoke-Command -ComputerName $comps -Credential $creds -Authentication Negotiate -ScriptBlock {
     Get-LocalUser | select-Object name,enabled,pscomputername,@{label="GroupMembership";expression={net.exe user $_.name | Select-String "Local Group Memberships" }},@{label="LastLogon";expression={net.exe user $_.name | Select-String "Last Logon"}}
 } | select-Object * -ExcludeProperty Runspaceid
+$services = Invoke-Command -ComputerName $comps -Credential $creds -Authentication Negotiate -ScriptBlock {
+    get-wmiobject win32_service | select-Object name,description,pathname,state,processid,status
+}| select-Object * -ExcludeProperty Runspaceid
 
 $DNS > ./report.txt
-$IPs| ft >> ./report.txt
+$IPs| ft -autosize -wrap >> ./report.txt
 $reg >> ./report.txt
-$skeddy | ft >> ./report.txt
-$procs | ft >> ./report.txt
+$skeddy | ft -autosize -wrap >> ./report.txt
+$procs | ft -autosize -wrap >> ./report.txt
 $users >> ./report.txt
+$services | ft -autosize -wrap >> ./report.text
 <#
 $dir = (cmd /c robocopy C:\ null *.* /l /s /njh /njs /ns /fp /lev:12).trim() | select-string "New File" | where {-not [string]::IsNullOrWhiteSpace($_)} |foreach{$_ -replace "`t","" -replace 'New File  ',''} 
 #put hashes in here
