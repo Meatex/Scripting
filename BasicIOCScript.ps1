@@ -22,7 +22,7 @@ $reg = Invoke-Command -ComputerName $comps -Credential $creds -Authentication Ne
 }
 
 $skeddy = Invoke-Command -ComputerName $comps -Credential $creds -Authentication Negotiate -ScriptBlock {
-    Get-ScheduledTask | Select-Object pscomputername,Taskname,{$_.Actions.Execute}
+    Get-ScheduledTask | Select-Object @{label="SourceHost";expression={hostname}},Taskname,{$_.Actions.Execute}
 }| select-Object * -ExcludeProperty Runspaceid
 
 $procs = Invoke-Command -ComputerName $comps -Credential $creds -Authentication Negotiate -ScriptBlock {
@@ -34,10 +34,10 @@ $Users = Invoke-Command -ComputerName $comps -Credential $creds -Authentication 
 } | select-Object * -ExcludeProperty Runspaceid
 
 $DNS > ./report.txt
-$IPs >> ./report.txt
+$IPs| ft >> ./report.txt
 $reg >> ./report.txt
-$skeddy >> ./report.txt
-$procs >> ./report.txt
+$skeddy | ft >> ./report.txt
+$procs | ft >> ./report.txt
 $users >> ./report.txt
 <#
 $dir = (cmd /c robocopy C:\ null *.* /l /s /njh /njs /ns /fp /lev:12).trim() | select-string "New File" | where {-not [string]::IsNullOrWhiteSpace($_)} |foreach{$_ -replace "`t","" -replace 'New File  ',''} 
