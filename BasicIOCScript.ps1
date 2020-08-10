@@ -1,5 +1,6 @@
 [pscredential]$creds = get-credential -message hey -username 'Administrator'
-$comps =@('10.110.3.12','10.110.3.13','10.110.3.14')
+$comps =@('10.110.3.12','10.110.3.13','10.110.3.14',
+'10.110.3.15','10.110.3.16','10.110.3.17','10.110.3.18','10.110.3.19','10.110.3.20')
 $RunKeys=@("HKLM:\Software\Microsoft\Windows\CurrentVersion\Run\", 
 "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunOnce\",
 "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunServices\",
@@ -16,10 +17,8 @@ $DNS = Invoke-Command -ComputerName $comps -Credential $creds -Authentication Ne
 $IPs = Invoke-Command -ComputerName $comps -Credential $creds -Authentication Negotiate -ScriptBlock {Get-NetTCPConnection} | select-object pscomputername,LocalAddress,LocalPort,RemoteAddress,RemotePort,owningprocess,state
 
 $reg = Invoke-Command -ComputerName $comps -Credential $creds -Authentication Negotiate -ScriptBlock {
-    foreach ($key in $using:Runkeys) {
-        Get-Item -path $key -ErrorAction SilentlyContinue -Force
-    }
-}
+    foreach ($key in $using:Runkeys) {Get-Item -path $key -ErrorAction SilentlyContinue -Force}
+} 
 
 $skeddy = Invoke-Command -ComputerName $comps -Credential $creds -Authentication Negotiate -ScriptBlock {
     Get-ScheduledTask | Select-Object @{label="SourceHost";expression={hostname}},Taskname,{$_.Actions.Execute}
@@ -33,16 +32,23 @@ $Users = Invoke-Command -ComputerName $comps -Credential $creds -Authentication 
     Get-LocalUser | select-Object name,enabled,pscomputername,@{label="GroupMembership";expression={net.exe user $_.name | Select-String "Local Group Memberships" }},@{label="LastLogon";expression={net.exe user $_.name | Select-String "Last Logon"}}
 } | select-Object * -ExcludeProperty Runspaceid
 $services = Invoke-Command -ComputerName $comps -Credential $creds -Authentication Negotiate -ScriptBlock {
-    get-wmiobject win32_service | select-Object name,description,pathname,state,processid,status
+    get-wmiobject win32_service | select-Object name,pathname,state,processid,status
 }| select-Object * -ExcludeProperty Runspaceid
 
+<#
+$joker = Invoke-Command -ComputerName $comps -Credential $creds -Authentication Negotiate -ScriptBlock {
+    $dir = (cmd /c robocopy C:\ null *.* /l /s /njh /njs /ns /fp /lev:15).trim() | select-string "New File" | where-object {-not [string]::IsNullOrWhiteSpace($_)} |foreach-object{$_ -replace "`t","" -replace 'New File  ',''} 
+    $dir | where-object {$_ -like "*joker*"} | select-object @{label="Host";expression={whoami}},@{label="Path";expression={$_}}
+}
+#>
+#$joker | ft pscomputername,Host,Path
 $DNS > ./report.txt
 $IPs| ft -autosize -wrap >> ./report.txt
 $reg >> ./report.txt
 $skeddy | ft -autosize -wrap >> ./report.txt
-$procs | ft -autosize -wrap >> ./report.txt
-$users >> ./report.txt
-$services | ft -autosize -wrap >> ./report.text
+$procs | ft pscomputername,Name,ProcessId,ParentProcessId,CommandLine -autosize -wrap >> ./report.txt
+$users | ft -wrap -autosize >> ./report.txt
+$services | ft pscomputername,name,State,ProcessId,PathName,Status -autosize -wrap >> ./report.txt
 <#
 $dir = (cmd /c robocopy C:\ null *.* /l /s /njh /njs /ns /fp /lev:12).trim() | select-string "New File" | where {-not [string]::IsNullOrWhiteSpace($_)} |foreach{$_ -replace "`t","" -replace 'New File  ',''} 
 #put hashes in here
