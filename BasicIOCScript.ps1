@@ -54,7 +54,7 @@ $skeddy | ft -autosize -wrap >> ./report.txt
 $procs | ft pscomputername,Name,ProcessId,ParentProcessId,CommandLine -autosize -wrap >> ./report.txt
 $users | ft -wrap -autosize >> ./report.txt
 $services | ft pscomputername,name,State,ProcessId,PathName,Status -autosize -wrap >> ./report.txt
-$HashMatches | ft pscomputername,path,hash
+$HashMatches | ft pscomputername,path,hash >> ./report.txt
 
 
 <#
